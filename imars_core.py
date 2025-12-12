@@ -13,7 +13,6 @@ TEMPERATURE_REFINE = 0.4
 # --- 2. 代理模型配置 (Agent Pool) ---
 
 # 初始草稿代理 (Agent 0)
-# 'model' 字段將在 start_imars_refinement 中被 api_config 覆蓋
 agent_initial = {
     'name': "Drafting Agent",
     'model': "gemini-2.5-flash", 
@@ -96,7 +95,6 @@ def call_ai_agent(agent_config, user_prompt, previous_answer, client_instance, v
             raise RuntimeError(f"Gemini API 呼叫失敗 ({agent_config['name']}, 模型: {model}): {str(e)}")
     
     # elif vendor == 'openai':
-    #     # TODO: 在此處實作 OpenAI/其他供應商的 API 呼叫邏輯
     #     raise NotImplementedError("OpenAI 供應商尚未實作。")
         
     else:
