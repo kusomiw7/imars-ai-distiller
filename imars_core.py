@@ -5,12 +5,12 @@ from google import genai
 from google.genai import types 
 # TODO: 未來在此處引入其他供應商的 SDK，如: from openai import OpenAI
 
-# --- 1. 流程控制常數 ---
+# --- 1. 流程控制常數 (修復 NameError 1) ---
 MAX_ITERATIONS = 4 
 TEMPERATURE_INIT = 0.8 
 TEMPERATURE_REFINE = 0.4 
 
-# --- 2. 代理模型配置 (Agent Pool) ---
+# --- 2. 代理模型配置 (Agent Pool) (修復 NameError 2 & 3) ---
 
 # 初始草稿代理 (Agent 0)
 agent_initial = {
@@ -53,12 +53,12 @@ AGENTS = [
 
 def call_ai_agent(agent_config, user_prompt, previous_answer, client_instance, vendor):
     """
-    實際呼叫 AI API 進行蒸餾與精煉。根據傳入的 vendor 執行對應的 API 呼叫。
+    實際呼叫 AI API 進行蒸餾與精煉。
     """
     if not client_instance:
         raise ConnectionError("AI Client 尚未初始化。請檢查 API Key。")
     
-    # 1. 提示構建
+    # 1. 提示構建 (修復 call_ai_agent 內部 NameError)
     if agent_config['name'] == "Drafting Agent":
         full_prompt = (
             f"用戶原始問題：\n{user_prompt}\n\n"
@@ -84,7 +84,6 @@ def call_ai_agent(agent_config, user_prompt, previous_answer, client_instance, v
         )
         
         try:
-            # 呼叫 Gemini
             response = client_instance.models.generate_content(
                 model=model,
                 contents=full_prompt,
@@ -98,16 +97,13 @@ def call_ai_agent(agent_config, user_prompt, previous_answer, client_instance, v
     #     raise NotImplementedError("OpenAI 供應商尚未實作。")
         
     else:
-        # 如果供應商類型無法識別，則報錯
         raise TypeError(f"不支援或無法識別的 AI 供應商: {vendor}")
 
 
 def start_imars_refinement(user_prompt, api_config={}): 
     """
     主控函數：執行多 Agent 迭代蒸餾流程。
-    api_config = {'vendor': 'gemini'|'openai'|..., 'key': 'YOUR_API_KEY', 'model_override': 'model_name'}
     """
-    # 錯誤檢查：確保配置和密鑰存在
     if not api_config or not api_config.get('key') or not api_config.get('vendor'):
         error_log = [{'type': 'System', 'title': '🚨 嚴重錯誤', 'content': '請提供包含供應商(vendor)和密鑰(key)的 API 配置。'}]
         return None, error_log
@@ -121,8 +117,6 @@ def start_imars_refinement(user_prompt, api_config={}):
     try:
         if vendor == 'gemini':
             client = genai.Client(api_key=api_key)
-        # elif vendor == 'openai':
-        #     client = openai.OpenAI(api_key=api_key)
         else:
             raise ValueError(f"不支援的 AI 供應商: {vendor}")
             
@@ -132,7 +126,7 @@ def start_imars_refinement(user_prompt, api_config={}):
         error_log = [{'type': 'System', 'title': '🚨 客戶端錯誤', 'content': f'無法初始化 AI Client。請檢查密鑰或供應商名稱。錯誤: {str(e)}'}]
         return None, error_log
 
-    # 2. 覆蓋模型名稱 (確保所有 Agent 使用同一模型，如果提供了 model_override)
+    # 2. 覆蓋模型名稱 (如果提供了 model_override)
     if api_config.get('model_override'):
         model_name = api_config['model_override']
         agent_initial['model'] = model_name
@@ -148,7 +142,7 @@ def start_imars_refinement(user_prompt, api_config={}):
             user_prompt, 
             initial_instruction, 
             client,
-            vendor # 傳遞供應商名稱
+            vendor 
         )
         process_history.append({'type': 'Agent', 'title': f'1. {agent_initial["name"]} (草稿生成)', 'content': '初始草稿生成完畢。'})
     except Exception as e:
@@ -165,7 +159,7 @@ def start_imars_refinement(user_prompt, api_config={}):
                 user_prompt, 
                 current_answer,
                 client,
-                vendor # 傳遞供應商名稱
+                vendor 
             )
             current_answer = refined_answer 
             
