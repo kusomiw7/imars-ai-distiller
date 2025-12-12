@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IMARS AI 蒸餾器測試前端</title>
+    <title>IMARS AI 蒸餾器 (BYOK/BYOB)</title>
     <style>
-        /* 樣式保持不變 */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f4f7f9; color: #333; }
         .container { max-width: 900px; margin: auto; background-color: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
         h1 { color: #007bff; text-align: center; margin-bottom: 25px; }
@@ -20,31 +19,33 @@
         .log-item-title { font-weight: bold; color: #007bff; }
         .log-item.Error .log-item-title { color: #dc3545; }
         #loading { display: none; color: #007bff; font-weight: bold; margin-top: 20px; }
+        .key-input-group { display: flex; align-items: center; margin-bottom: 10px; }
+        .key-input-group select { width: 30%; margin-right: 10px; padding: 10px; border-radius: 5px; }
+        .key-input-group input { flex-grow: 1; }
+        .note { font-size: 0.9em; color: #666; margin-top: 5px;}
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>IMARS AI 蒸餾器測試</h1>
-    <p style="color: #dc3545; font-weight: bold;">⚠️ 請將下方的 URL 替換為您的 Render 服務網址。</p>
+    <h1>IMARS AI 蒸餾器 (BYOK/BYOB)</h1>
+    <p class="note">此介面允許您指定後端 URL，並提供多個不同供應商的 API Key 進行蒸餾。</p>
 
     <form id="distillationForm">
-        <label for="apiUrl">Render 服務 URL (請替換為您的網址):</label>
-        <input type="text" id="apiUrl" value="https://YOUR-IMARS-SERVICE.onrender.com/api/distill" required>
-
-        <label for="apiKey">Gemini API Key (您的費用由此 Key 結算):</label>
-        <input type="text" id="apiKey" placeholder="在此輸入您的 GEMINI_API_KEY" required>
         
-        <label for="vendor">AI 供應商:</label>
-        <select id="vendor">
-            <option value="gemini">Google Gemini (目前唯一實作)</option>
-        </select>
+        <label for="apiUrl">後端 API URL (BYOB 服務地址):</label>
+        <input type="text" id="apiUrl" value="https://imars-ai-distiller.onrender.com/api/distill" required>
+        <p class="note">💡 預設為您部署的 Render 服務地址。您可以替換為任何遵循相同 API 規範的伺服器。</p>
 
-        <label for="modelOverride">模型 (可選, 留空則使用預設):</label>
-        <input type="text" id="modelOverride" placeholder="例如: gemini-2.5-pro">
+        <label>🔐 您的 Key Pool (最多 10 個 Key):</label>
+        <p class="note" style="color:#cc3300;">⚠️ Key 費用將由您與供應商結算。請填寫至少一個 Key。</p>
+        
+        <div id="keyPoolContainer">
+            </div>
+        <button type="button" onclick="addKeyInput()">+ 新增 Key</button>
 
-        <label for="prompt">用戶提示 (Prompt):</label>
-        <textarea id="prompt" rows="5" required>AI 模型蒸餾 (Model Distillation) 的核心原理和主要優點是什麼？請詳細解釋「軟標籤」和「硬標籤」的差異。</textarea>
+        <label for="prompt" style="margin-top: 20px;">用戶提示 (Prompt):</label>
+        <textarea id="prompt" rows="5" required>AI 模型蒸餾的核心原理是什麼？請詳細解釋「軟標籤」和「硬標籤」的差異。</textarea>
 
         <button type="submit">啟動 AI 蒸餾</button>
     </form>
@@ -63,17 +64,91 @@
 </div>
 
 <script>
+    const MAX_KEYS = 10;
+    const keyPoolContainer = document.getElementById('keyPoolContainer');
+    let keyCount = 0;
+
+    // 初始化：預設顯示 3 個 Key 輸入框
+    window.onload = function() {
+        for (let i = 0; i < 3; i++) {
+            addKeyInput();
+        }
+    }
+
+    /**
+     * 動態新增 Key 和 Vendor 輸入框
+     */
+    function addKeyInput() {
+        if (keyCount >= MAX_KEYS) {
+            alert(`最多只能添加 ${MAX_KEYS} 個 Key。`);
+            return;
+        }
+
+        keyCount++;
+        
+        const div = document.createElement('div');
+        div.className = 'key-input-group';
+        div.id = `key-group-${keyCount}`;
+
+        const vendorSelect = document.createElement('select');
+        vendorSelect.name = 'vendor';
+        vendorSelect.innerHTML = `
+            <option value="gemini">Google Gemini</option>
+            <option value="openai">OpenAI</option>
+            <option value="deepseek">DeepSeek AI</option>
+            <option value="">-- 其他 --</option>
+        `;
+
+        const keyInput = document.createElement('input');
+        keyInput.type = 'text';
+        keyInput.name = 'key';
+        keyInput.placeholder = `Key #${keyCount} (例如: AIzaSy...或 sk-...)`;
+
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.textContent = 'X';
+        removeButton.style.width = '30px';
+        removeButton.style.marginLeft = '10px';
+        removeButton.style.backgroundColor = '#dc3545';
+        removeButton.onclick = function() {
+            keyPoolContainer.removeChild(div);
+            keyCount--;
+        };
+
+        div.appendChild(vendorSelect);
+        div.appendChild(keyInput);
+        div.appendChild(removeButton);
+        keyPoolContainer.appendChild(div);
+    }
+
+
     document.getElementById('distillationForm').addEventListener('submit', async function(e) {
         e.preventDefault();
 
         // 1. 獲取輸入值
         const apiUrl = document.getElementById('apiUrl').value.trim();
-        const apiKey = document.getElementById('apiKey').value.trim();
-        const vendor = document.getElementById('vendor').value;
-        const modelOverride = document.getElementById('modelOverride').value.trim();
         const prompt = document.getElementById('prompt').value;
 
-        // 2. 準備輸出元素
+        // 2. 構造 Key Pool
+        const apiKeysPool = [];
+        const keyGroups = keyPoolContainer.querySelectorAll('.key-input-group');
+        
+        keyGroups.forEach(group => {
+            const vendor = group.querySelector('select[name="vendor"]').value.trim();
+            const key = group.querySelector('input[name="key"]').value.trim();
+            
+            if (key && vendor) {
+                apiKeysPool.push({ vendor: vendor.toLowerCase(), key: key });
+            }
+        });
+
+        if (apiKeysPool.length === 0) {
+            alert("請至少填寫一個有效的 Key 和供應商!");
+            return;
+        }
+
+
+        // 3. 準備輸出元素
         const finalAnswerElement = document.getElementById('finalAnswer');
         const processLogElement = document.getElementById('processLog');
         const loadingElement = document.getElementById('loading');
@@ -82,18 +157,9 @@
         processLogElement.innerHTML = '';
         loadingElement.style.display = 'block';
 
-        // 3. 構造請求體 (API Configuration)
-        const apiConfig = {
-            vendor: vendor,
-            key: apiKey
-        };
-        if (modelOverride) {
-            apiConfig.model_override = modelOverride;
-        }
-
         const requestBody = {
             prompt: prompt,
-            api_config: apiConfig // 匹配 app.py 中期望的結構
+            api_keys_pool: apiKeysPool // 匹配後端期望的新結構
         };
 
         try {
@@ -112,7 +178,7 @@
             if (response.ok && data.success) {
                 finalAnswerElement.textContent = data.final_answer || '未能產生答案。';
             } else {
-                finalAnswerElement.textContent = `錯誤 (${response.status} ${response.statusText}): ${data.error || '後端發生未知錯誤'}`;
+                finalAnswerElement.textContent = `🚨 錯誤 (${response.status} ${response.statusText}): ${data.error || '後端發生未知錯誤'}`;
                 // 即使失敗，也嘗試顯示日誌
                 renderLog(data.log || [], processLogElement);
                 return;
@@ -122,7 +188,8 @@
             renderLog(data.log, processLogElement);
 
         } catch (error) {
-            finalAnswerElement.textContent = `連接錯誤: 無法連接到後端服務。請檢查 URL 是否正確。錯誤訊息: ${error.message}`;
+            // 這個錯誤通常是因為 CORS 限制或 URL 錯誤
+            finalAnswerElement.textContent = `連接錯誤: 無法連接到服務。請檢查 URL 或 CORS 限制。錯誤訊息: ${error.message}`;
             processLogElement.innerHTML = '';
         } finally {
             loadingElement.style.display = 'none';
