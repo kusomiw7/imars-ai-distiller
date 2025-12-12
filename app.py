@@ -2,7 +2,7 @@
 
 import os
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask_cors import CORS # 確保已導入 CORS
 from imars_core import start_imars_refinement 
 
 app = Flask(__name__)
@@ -53,6 +53,5 @@ def handle_distillation():
         return jsonify({"error": f"Internal distillation error: {str(e)}"}), 500
 
 if __name__ == '__main__':
-    # 僅用於本地測試
     os.environ['GEMINI_API_KEY'] = 'YOUR_LOCAL_TEST_API_KEY_HERE' 
     app.run(debug=True, port=os.getenv("PORT", 5000))
