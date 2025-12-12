@@ -12,8 +12,7 @@ except ImportError:
     print("FATAL ERROR: Could not import start_imars_refinement from imars_core. Is imars_core.py present?")
 
 app = Flask(__name__)
-# 解決 Load failed 的關鍵：啟用 CORS，允許所有來源（*）
-# origins='*' 是最寬鬆的設定，用於開發和 BYOK 服務
+# 解決 Load failed 和 CORS 的關鍵：啟用 CORS，允許所有來源（*）
 CORS(app, supports_credentials=True, origins='*') 
 
 @app.route('/', methods=['GET'])
@@ -36,10 +35,11 @@ def handle_distillation():
         return jsonify({"error": "Missing prompt"}), 400
         
     # 檢查 Key Pool 是否至少有一個 Key 對象
+    # 我們只檢查第一個 Key 是否有 key 字段，以確保結構存在
     if not api_keys_pool or not isinstance(api_keys_pool, list) or not api_keys_pool[0].get('key'):
         return jsonify({
             "success": False,
-            "error": "Missing required API key pool. Please provide a list of {'vendor', 'key'} objects."
+            "error": "Missing required API key pool. Please provide at least one key."
         }), 400
 
     try:
