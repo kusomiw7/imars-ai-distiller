@@ -1,0 +1,16 @@
+# Python 忽略清單
+__pycache__/
+*.pyc
+
+# 虛擬環境
+venv/
+.venv/
+
+# 資料庫或日誌
+*.db
+*.log
+
+# 環境變數/密鑰 (重要！)
+.env
+.flaskenv
+GEMINI_API_KEY # 雖然您在 app.py 中註釋了，但建議還是忽略
