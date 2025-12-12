@@ -1,12 +1,12 @@
-# app.py (最終版 - 接收 Key Pool)
+# app.py (最終版 - 接收 Key Pool 並啟用 CORS)
 
 import os
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask_cors import CORS  # 確保 Flask-Cors 存在
 from imars_core import start_imars_refinement 
 
 app = Flask(__name__)
-# 啟用 CORS，允許所有來源（*），以支持用戶從任何網址（包括本地）連接到您的 Render 服務
+# 解決 Load failed 的關鍵：啟用 CORS，允許所有來源（*）
 CORS(app, supports_credentials=True, origins='*') 
 
 @app.route('/', methods=['GET'])
@@ -24,8 +24,8 @@ def handle_distillation():
     if not user_prompt:
         return jsonify({"error": "Missing prompt"}), 400
         
-    # 檢查：確保至少有一個 Key 被提供
     if not api_keys_pool or not isinstance(api_keys_pool, list) or not api_keys_pool[0].get('key'):
+        # 這是舊版 app.py 可能出錯的地方，我們現在確保檢查的是正確的結構
         return jsonify({
             "success": False,
             "error": "Missing required API key pool. Please provide a list of {'vendor', 'key'} objects."
@@ -36,7 +36,6 @@ def handle_distillation():
         final_answer, process_history = start_imars_refinement(user_prompt, api_keys_pool)
         
         if final_answer is None:
-             # 如果 final_answer 為空，表示啟動或精煉失敗
              return jsonify({
                 "success": False,
                 "error": "AI 服務啟動或精煉失敗。請檢查 API Keys 或供應商名稱是否正確。",
@@ -50,6 +49,7 @@ def handle_distillation():
         })
     
     except Exception as e:
+        # 打印錯誤到 Render log
         print(f"Unhandled Error during distillation: {e}")
         return jsonify({"error": f"Internal distillation error: {str(e)}"}), 500
 
