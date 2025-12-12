@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMARS AI 蒸餾器測試前端</title>
+    <style>
+        /* 樣式保持不變 */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f4f7f9; color: #333; }
+        .container { max-width: 900px; margin: auto; background-color: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+        h1 { color: #007bff; text-align: center; margin-bottom: 25px; }
+        label { display: block; margin-top: 15px; margin-bottom: 5px; font-weight: 600; }
+        input[type="text"], textarea, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        button { background-color: #28a745; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.3s; }
+        button:hover { background-color: #218838; }
+        #output { margin-top: 30px; padding: 15px; border: 1px dashed #007bff; border-radius: 5px; background-color: #e9f7ff; }
+        pre { white-space: pre-wrap; word-wrap: break-word; background-color: #eee; padding: 10px; border-radius: 4px; border: 1px solid #ddd; }
+        .log-item { margin-bottom: 10px; padding: 8px; border-left: 3px solid #007bff; background-color: #f8f8f8; }
+        .log-item.Error { border-left-color: #dc3545; background-color: #ffe0e3; }
+        .log-item-title { font-weight: bold; color: #007bff; }
+        .log-item.Error .log-item-title { color: #dc3545; }
+        #loading { display: none; color: #007bff; font-weight: bold; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>IMARS AI 蒸餾器測試</h1>
+    <p style="color: #dc3545; font-weight: bold;">⚠️ 請將下方的 URL 替換為您的 Render 服務網址。</p>
+
+    <form id="distillationForm">
+        <label for="apiUrl">Render 服務 URL (請替換為您的網址):</label>
+        <input type="text" id="apiUrl" value="https://YOUR-IMARS-SERVICE.onrender.com/api/distill" required>
+
+        <label for="apiKey">Gemini API Key (您的費用由此 Key 結算):</label>
+        <input type="text" id="apiKey" placeholder="在此輸入您的 GEMINI_API_KEY" required>
+        
+        <label for="vendor">AI 供應商:</label>
+        <select id="vendor">
+            <option value="gemini">Google Gemini (目前唯一實作)</option>
+        </select>
+
+        <label for="modelOverride">模型 (可選, 留空則使用預設):</label>
+        <input type="text" id="modelOverride" placeholder="例如: gemini-2.5-pro">
+
+        <label for="prompt">用戶提示 (Prompt):</label>
+        <textarea id="prompt" rows="5" required>AI 模型蒸餾 (Model Distillation) 的核心原理和主要優點是什麼？請詳細解釋「軟標籤」和「硬標籤」的差異。</textarea>
+
+        <button type="submit">啟動 AI 蒸餾</button>
+    </form>
+    
+    <div id="loading">... 正在進行多代理迭代精煉，請稍候 ...</div>
+
+    <div id="output">
+        <h2>處理結果</h2>
+        
+        <label>最終精煉答案 (Final Answer):</label>
+        <pre id="finalAnswer">尚未執行。</pre>
+        
+        <label>流程日誌 (Process Log):</label>
+        <div id="processLog">無日誌。</div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('distillationForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // 1. 獲取輸入值
+        const apiUrl = document.getElementById('apiUrl').value.trim();
+        const apiKey = document.getElementById('apiKey').value.trim();
+        const vendor = document.getElementById('vendor').value;
+        const modelOverride = document.getElementById('modelOverride').value.trim();
+        const prompt = document.getElementById('prompt').value;
+
+        // 2. 準備輸出元素
+        const finalAnswerElement = document.getElementById('finalAnswer');
+        const processLogElement = document.getElementById('processLog');
+        const loadingElement = document.getElementById('loading');
+        
+        finalAnswerElement.textContent = '處理中...';
+        processLogElement.innerHTML = '';
+        loadingElement.style.display = 'block';
+
+        // 3. 構造請求體 (API Configuration)
+        const apiConfig = {
+            vendor: vendor,
+            key: apiKey
+        };
+        if (modelOverride) {
+            apiConfig.model_override = modelOverride;
+        }
+
+        const requestBody = {
+            prompt: prompt,
+            api_config: apiConfig // 匹配 app.py 中期望的結構
+        };
+
+        try {
+            // 4. 發送請求
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            const data = await response.json();
+
+            // 5. 處理結果
+            if (response.ok && data.success) {
+                finalAnswerElement.textContent = data.final_answer || '未能產生答案。';
+            } else {
+                finalAnswerElement.textContent = `錯誤 (${response.status} ${response.statusText}): ${data.error || '後端發生未知錯誤'}`;
+                // 即使失敗，也嘗試顯示日誌
+                renderLog(data.log || [], processLogElement);
+                return;
+            }
+
+            // 6. 渲染日誌
+            renderLog(data.log, processLogElement);
+
+        } catch (error) {
+            finalAnswerElement.textContent = `連接錯誤: 無法連接到後端服務。請檢查 URL 是否正確。錯誤訊息: ${error.message}`;
+            processLogElement.innerHTML = '';
+        } finally {
+            loadingElement.style.display = 'none';
+        }
+    });
+
+    /**
+     * 將後端返回的日誌陣列渲染到 HTML 中
+     */
+    function renderLog(logArray, targetElement) {
+        targetElement.innerHTML = '';
+        if (!logArray || logArray.length === 0) {
+            targetElement.innerHTML = '無詳細處理日誌。';
+            return;
+        }
+        
+        logArray.forEach(item => {
+            const div = document.createElement('div');
+            div.className = `log-item ${item.type}`; 
+            
+            const title = document.createElement('div');
+            title.className = 'log-item-title';
+            title.textContent = item.title;
+            
+            const content = document.createElement('pre');
+            content.textContent = item.content; 
+            
+            div.appendChild(title);
+            div.appendChild(content);
+            targetElement.appendChild(div);
+        });
+    }
+</script>
+
+</body>
+</html>
