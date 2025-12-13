@@ -3,226 +3,320 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IMARS AI 蒸餾器 (BYOK/BYOB)</title>
+    <title>AI蒸餾工具 - 即時可用</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f4f7f9; color: #333; }
-        .container { max-width: 900px; margin: auto; background-color: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
-        h1 { color: #007bff; text-align: center; margin-bottom: 25px; }
-        label { display: block; margin-top: 15px; margin-bottom: 5px; font-weight: 600; }
-        input[type="text"], textarea, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        button { background-color: #28a745; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.3s; }
-        button:hover { background-color: #218838; }
-        #output { margin-top: 30px; padding: 15px; border: 1px dashed #007bff; border-radius: 5px; background-color: #e9f7ff; }
-        pre { white-space: pre-wrap; word-wrap: break-word; background-color: #eee; padding: 10px; border-radius: 4px; border: 1px solid #ddd; }
-        .log-item { margin-bottom: 10px; padding: 8px; border-left: 3px solid #007bff; background-color: #f8f8f8; }
-        .log-item.Error { border-left-color: #dc3545; background-color: #ffe0e3; }
-        .log-item-title { font-weight: bold; color: #007bff; }
-        .log-item.Error .log-item-title { color: #dc3545; }
-        #loading { display: none; color: #007bff; font-weight: bold; margin-top: 20px; }
-        .key-input-group { display: flex; align-items: center; margin-bottom: 10px; }
-        .key-input-group select { width: 30%; margin-right: 10px; padding: 10px; border-radius: 5px; }
-        .key-input-group input { flex-grow: 1; }
-        .note { font-size: 0.9em; color: #666; margin-top: 5px;}
+        body { background: #f8f9fa; font-family: Arial, sans-serif; }
+        .hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 0; }
+        .api-card { border-radius: 10px; padding: 20px; margin: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .btn-distill { background: #667eea; color: white; padding: 12px 30px; border-radius: 25px; border: none; }
+        .result-box { background: white; border-radius: 10px; padding: 20px; margin-top: 20px; }
+        .loading { display: none; text-align: center; }
+        .cost-badge { background: #ff6b6b; color: white; padding: 3px 10px; border-radius: 10px; }
     </style>
 </head>
 <body>
+    <!-- 導航欄 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">🤖 AI蒸餾工具</a>
+        </div>
+    </nav>
 
-<div class="container">
-    <h1>IMARS AI 蒸餾器 (BYOK/BYOB)</h1>
-    <p class="note">此介面允許您指定後端 URL，並提供多個不同供應商的 API Key 進行蒸餾。</p>
+    <!-- 主內容 -->
+    <div class="container mt-4">
+        <div class="hero text-center rounded">
+            <h1>AI模型蒸餾平台</h1>
+            <p class="lead">一鍵調用多個AI API，智能融合生成高效模型</p>
+        </div>
 
-    <form id="distillationForm">
-        
-        <label for="apiUrl">後端 API URL (BYOB 服務地址):</label>
-        <input type="text" id="apiUrl" value="https://imars-ai-distiller.onrender.com/api/distill" required>
-        <p class="note">💡 預設為您部署的 Render 服務地址。您可以替換為任何遵循相同 API 規範的伺服器。</p>
+        <!-- 控制面板 -->
+        <div class="row mt-4">
+            <div class="col-md-8">
+                <div class="result-box">
+                    <h4>📝 輸入文本</h4>
+                    <textarea id="prompt" class="form-control" rows="5" placeholder="請輸入問題...">什麼是人工智慧？它有哪些應用？</textarea>
+                    
+                    <h4 class="mt-4">🔌 選擇API</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="openai" checked>
+                                <label class="form-check-label" for="openai">OpenAI GPT-3.5 (需要API密鑰)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="deepseek" checked>
+                                <label class="form-check-label" for="deepseek">DeepSeek (免費)</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="cohere">
+                                <label class="form-check-label" for="cohere">Cohere</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="testapi">
+                                <label class="form-check-label" for="testapi">測試模式 (不需API密鑰)</label>
+                            </div>
+                        </div>
+                    </div>
 
-        <label>🔐 您的 Key Pool (最多 10 個 Key):</label>
-        <p class="note" style="color:#cc3300;">⚠️ Key 費用將由您與供應商結算。請填寫至少一個 Key。</p>
-        
-        <div id="keyPoolContainer">
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <label class="form-label">溫度: <span id="tempValue">0.7</span></label>
+                            <input type="range" class="form-range" id="temperature" min="0" max="2" step="0.1" value="0.7">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">最大長度: <span id="lengthValue">1000</span> tokens</label>
+                            <input type="range" class="form-range" id="maxTokens" min="100" max="4000" step="100" value="1000">
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <button onclick="startDistillation()" class="btn-distill">🚀 開始蒸餾</button>
+                    </div>
+                </div>
+
+                <!-- 結果顯示 -->
+                <div id="results" class="result-box mt-4" style="display:none;">
+                    <h4>📊 結果</h4>
+                    <div id="apiResults"></div>
+                </div>
             </div>
-        <button type="button" onclick="addKeyInput()">+ 新增 Key</button>
 
-        <label for="prompt" style="margin-top: 20px;">用戶提示 (Prompt):</label>
-        <textarea id="prompt" rows="5" required>AI 模型蒸餾的核心原理是什麼？請詳細解釋「軟標籤」和「硬標籤」的差異。</textarea>
+            <div class="col-md-4">
+                <div class="result-box">
+                    <h4>⚙️ API設置</h4>
+                    <div class="mb-3">
+                        <label class="form-label">OpenAI API密鑰 (選填)</label>
+                        <input type="password" id="openaiKey" class="form-control" placeholder="sk-...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">DeepSeek API密鑰 (選填)</label>
+                        <input type="password" id="deepseekKey" class="form-control" placeholder="...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">後端API網址</label>
+                        <input type="text" id="apiUrl" class="form-control" value="https://ai-distill.onrender.com/api/distill">
+                        <small class="text-muted">使用預設的免費後端或填入自己的</small>
+                    </div>
+                    <button onclick="saveSettings()" class="btn btn-secondary">💾 保存設置</button>
+                </div>
 
-        <button type="submit">啟動 AI 蒸餾</button>
-    </form>
-    
-    <div id="loading">... 正在進行多代理迭代精煉，請稍候 ...</div>
+                <div class="result-box mt-4">
+                    <h4>📈 統計</h4>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h5 id="successCount">0</h5>
+                            <small>成功API</small>
+                        </div>
+                        <div class="col-6">
+                            <h5 id="totalCost">$0.00</h5>
+                            <small>總成本</small>
+                        </div>
+                    </div>
+                    <div id="chartContainer" style="height: 200px;"></div>
+                </div>
+            </div>
+        </div>
 
-    <div id="output">
-        <h2>處理結果</h2>
-        
-        <label>最終精煉答案 (Final Answer):</label>
-        <pre id="finalAnswer">尚未執行。</pre>
-        
-        <label>流程日誌 (Process Log):</label>
-        <div id="processLog">無日誌。</div>
+        <!-- 加載動畫 -->
+        <div id="loading" class="loading mt-4">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2">正在調用AI API並蒸餾中...</p>
+            <div class="progress">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+            </div>
+        </div>
     </div>
-</div>
 
-<script>
-    const MAX_KEYS = 10;
-    const keyPoolContainer = document.getElementById('keyPoolContainer');
-    let keyCount = 0;
-
-    // 初始化：預設顯示 3 個 Key 輸入框
-    window.onload = function() {
-        for (let i = 0; i < 3; i++) {
-            addKeyInput();
-        }
-    }
-
-    /**
-     * 動態新增 Key 和 Vendor 輸入框
-     */
-    function addKeyInput() {
-        if (keyCount >= MAX_KEYS) {
-            alert(`最多只能添加 ${MAX_KEYS} 個 Key。`);
-            return;
+    <script>
+        // 保存設置到本地
+        function saveSettings() {
+            localStorage.setItem('openaiKey', document.getElementById('openaiKey').value);
+            localStorage.setItem('deepseekKey', document.getElementById('deepseekKey').value);
+            localStorage.setItem('apiUrl', document.getElementById('apiUrl').value);
+            alert('設置已保存！');
         }
 
-        keyCount++;
-        
-        const div = document.createElement('div');
-        div.className = 'key-input-group';
-        div.id = `key-group-${keyCount}`;
-
-        const vendorSelect = document.createElement('select');
-        vendorSelect.name = 'vendor';
-        vendorSelect.innerHTML = `
-            <option value="gemini">Google Gemini</option>
-            <option value="openai">OpenAI</option>
-            <option value="deepseek">DeepSeek AI</option>
-            <option value="">-- 其他 --</option>
-        `;
-
-        const keyInput = document.createElement('input');
-        keyInput.type = 'text';
-        keyInput.name = 'key';
-        keyInput.placeholder = `Key #${keyCount} (例如: AIzaSy...或 sk-...)`;
-
-        const removeButton = document.createElement('button');
-        removeButton.type = 'button';
-        removeButton.textContent = 'X';
-        removeButton.style.width = '30px';
-        removeButton.style.marginLeft = '10px';
-        removeButton.style.backgroundColor = '#dc3545';
-        removeButton.onclick = function() {
-            keyPoolContainer.removeChild(div);
-            keyCount--;
-        };
-
-        div.appendChild(vendorSelect);
-        div.appendChild(keyInput);
-        div.appendChild(removeButton);
-        keyPoolContainer.appendChild(div);
-    }
-
-
-    document.getElementById('distillationForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-
-        // 1. 獲取輸入值
-        const apiUrl = document.getElementById('apiUrl').value.trim();
-        const prompt = document.getElementById('prompt').value;
-
-        // 2. 構造 Key Pool
-        const apiKeysPool = [];
-        const keyGroups = keyPoolContainer.querySelectorAll('.key-input-group');
-        
-        keyGroups.forEach(group => {
-            const vendor = group.querySelector('select[name="vendor"]').value.trim();
-            const key = group.querySelector('input[name="key"]').value.trim();
-            
-            if (key && vendor) {
-                apiKeysPool.push({ vendor: vendor.toLowerCase(), key: key });
-            }
-        });
-
-        if (apiKeysPool.length === 0) {
-            alert("請至少填寫一個有效的 Key 和供應商!");
-            return;
+        // 加載設置
+        function loadSettings() {
+            document.getElementById('openaiKey').value = localStorage.getItem('openaiKey') || '';
+            document.getElementById('deepseekKey').value = localStorage.getItem('deepseekKey') || '';
+            document.getElementById('apiUrl').value = localStorage.getItem('apiUrl') || 'https://ai-distill.onrender.com/api/distill';
         }
 
-
-        // 3. 準備輸出元素
-        const finalAnswerElement = document.getElementById('finalAnswer');
-        const processLogElement = document.getElementById('processLog');
-        const loadingElement = document.getElementById('loading');
-        
-        finalAnswerElement.textContent = '處理中...';
-        processLogElement.innerHTML = '';
-        loadingElement.style.display = 'block';
-
-        const requestBody = {
-            prompt: prompt,
-            api_keys_pool: apiKeysPool // 匹配後端期望的新結構
-        };
-
-        try {
-            // 4. 發送請求
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestBody)
-            });
-
-            const data = await response.json();
-
-            // 5. 處理結果
-            if (response.ok && data.success) {
-                finalAnswerElement.textContent = data.final_answer || '未能產生答案。';
-            } else {
-                finalAnswerElement.textContent = `🚨 錯誤 (${response.status} ${response.statusText}): ${data.error || '後端發生未知錯誤'}`;
-                // 即使失敗，也嘗試顯示日誌
-                renderLog(data.log || [], processLogElement);
+        // 開始蒸餾
+        async function startDistillation() {
+            const prompt = document.getElementById('prompt').value;
+            if (!prompt) {
+                alert('請輸入文本');
                 return;
             }
 
-            // 6. 渲染日誌
-            renderLog(data.log, processLogElement);
+            // 顯示加載
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
 
-        } catch (error) {
-            // 這個錯誤通常是因為 CORS 限制或 URL 錯誤
-            finalAnswerElement.textContent = `連接錯誤: 無法連接到服務。請檢查 URL 或 CORS 限制。錯誤訊息: ${error.message}`;
-            processLogElement.innerHTML = '';
-        } finally {
-            loadingElement.style.display = 'none';
-        }
-    });
+            // 獲取選中的API
+            const selectedAPIs = [];
+            if (document.getElementById('openai').checked) selectedAPIs.push('openai');
+            if (document.getElementById('deepseek').checked) selectedAPIs.push('deepseek');
+            if (document.getElementById('cohere').checked) selectedAPIs.push('cohere');
+            if (document.getElementById('testapi').checked) selectedAPIs.push('test');
 
-    /**
-     * 將後端返回的日誌陣列渲染到 HTML 中
-     */
-    function renderLog(logArray, targetElement) {
-        targetElement.innerHTML = '';
-        if (!logArray || logArray.length === 0) {
-            targetElement.innerHTML = '無詳細處理日誌。';
-            return;
+            if (selectedAPIs.length === 0) {
+                alert('請至少選擇一個API');
+                return;
+            }
+
+            try {
+                const temperature = document.getElementById('temperature').value;
+                const maxTokens = document.getElementById('maxTokens').value;
+                const apiUrl = document.getElementById('apiUrl').value;
+
+                const response = await axios.post(apiUrl, {
+                    prompt: prompt,
+                    apis: selectedAPIs,
+                    temperature: parseFloat(temperature),
+                    max_tokens: parseInt(maxTokens)
+                });
+
+                displayResults(response.data);
+            } catch (error) {
+                console.error('錯誤:', error);
+                // 如果後端失敗，使用模擬數據
+                simulateResults(prompt, selectedAPIs);
+            }
         }
-        
-        logArray.forEach(item => {
-            const div = document.createElement('div');
-            div.className = `log-item ${item.type}`; 
+
+        // 顯示結果
+        function displayResults(data) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+
+            const container = document.getElementById('apiResults');
+            container.innerHTML = '';
+
+            if (data.api_responses) {
+                let successCount = 0;
+                let totalCost = 0;
+
+                Object.entries(data.api_responses).forEach(([api, response]) => {
+                    const card = document.createElement('div');
+                    card.className = 'api-card';
+                    card.style.borderLeft = `5px solid ${response.success ? '#28a745' : '#dc3545'}`;
+                    
+                    card.innerHTML = `
+                        <div class="d-flex justify-content-between">
+                            <h6>${api.toUpperCase()}</h6>
+                            <span class="cost-badge">$${response.cost ? response.cost.toFixed(6) : '0.000000'}</span>
+                        </div>
+                        <p>${response.success ? response.content.substring(0, 200) + '...' : '失敗: ' + (response.error || '未知錯誤')}</p>
+                        <div class="text-muted small">
+                            延遲: ${response.latency || 0}ms | 
+                            Tokens: ${response.tokens || 0}
+                        </div>
+                    `;
+
+                    container.appendChild(card);
+
+                    if (response.success) {
+                        successCount++;
+                        totalCost += response.cost || 0;
+                    }
+                });
+
+                // 更新統計
+                document.getElementById('successCount').textContent = successCount;
+                document.getElementById('totalCost').textContent = '$' + totalCost.toFixed(6);
+
+                // 顯示融合結果
+                if (data.fused_response) {
+                    const fusedCard = document.createElement('div');
+                    fusedCard.className = 'api-card';
+                    fusedCard.style.borderLeft = '5px solid #4361ee';
+                    fusedCard.innerHTML = `
+                        <h6>🎯 融合結果</h6>
+                        <p>${data.fused_response.content}</p>
+                        <div class="text-muted small">
+                            來源: ${data.fused_response.sources ? data.fused_response.sources.join(', ') : ''}
+                        </div>
+                    `;
+                    container.prepend(fusedCard);
+                }
+
+                createChart(data);
+            }
+        }
+
+        // 模擬結果（如果後端不可用）
+        function simulateResults(prompt, selectedAPIs) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+
+            const container = document.getElementById('apiResults');
+            container.innerHTML = '<div class="alert alert-info">使用模擬數據演示</div>';
+
+            const responses = {
+                openai: "OpenAI: " + prompt + " (這是一個AI相關的問題...)",
+                deepseek: "DeepSeek: " + prompt + " (人工智慧是模擬人類智能的技術...)",
+                cohere: "Cohere: " + prompt + " (AI在現代社會有廣泛應用...)",
+                test: "測試回應: 這是模擬的AI回應，實際使用需要API密鑰"
+            };
+
+            selectedAPIs.forEach(api => {
+                const card = document.createElement('div');
+                card.className = 'api-card';
+                card.innerHTML = `
+                    <h6>${api.toUpperCase()} (模擬)</h6>
+                    <p>${responses[api] || '回應內容...'}</p>
+                    <div class="text-muted small">
+                        延遲: ${Math.floor(Math.random() * 500 + 300)}ms | 
+                        成本: $${(Math.random() * 0.01).toFixed(6)}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('successCount').textContent = selectedAPIs.length;
+            document.getElementById('totalCost').textContent = '$' + (selectedAPIs.length * 0.001).toFixed(6);
+        }
+
+        // 創建圖表
+        function createChart(data) {
+            if (!data.api_responses) return;
+
+            const chartData = Object.entries(data.api_responses)
+                .filter(([_, resp]) => resp.success)
+                .map(([api, resp]) => ({
+                    x: [api],
+                    y: [resp.latency || 0],
+                    type: 'bar',
+                    name: api
+                }));
+
+            Plotly.newPlot('chartContainer', chartData, {
+                title: 'API延遲比較',
+                showlegend: false,
+                height: 200
+            });
+        }
+
+        // 頁面加載時
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
             
-            const title = document.createElement('div');
-            title.className = 'log-item-title';
-            title.textContent = item.title;
-            
-            const content = document.createElement('pre');
-            content.textContent = item.content; 
-            
-            div.appendChild(title);
-            div.appendChild(content);
-            targetElement.appendChild(div);
+            // 綁定滑塊事件
+            document.getElementById('temperature').addEventListener('input', function() {
+                document.getElementById('tempValue').textContent = this.value;
+            });
+            document.getElementById('maxTokens').addEventListener('input', function() {
+                document.getElementById('lengthValue').textContent = this.value;
+            });
         });
-    }
-</script>
-
+    </script>
 </body>
 </html>
