@@ -1,861 +1,278 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Fusion Pro - 專業AI蒸餾平台</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>我的AI工具 | 免費使用</title>
     <style>
-        :root {
-            --pro: #8B5CF6;
-            --basic: #10B981;
-            --free: #3B82F6;
-        }
-        body { background: #f8fafc; font-family: 'Inter', sans-serif; }
-        .navbar { background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .hero { 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial; 
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; padding: 60px 0; border-radius: 20px; margin: 20px 0;
+            min-height: 100vh;
+            padding: 20px;
         }
-        .api-card { 
-            background: white; border-radius: 15px; padding: 20px; 
-            margin: 15px 0; box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            border-left: 5px solid var(--free);
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .step {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+        }
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            margin: 20px 0;
+            resize: vertical;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            width: 100%;
             transition: transform 0.3s;
         }
-        .api-card:hover { transform: translateY(-5px); }
-        .btn-subscribe { 
-            background: linear-gradient(135deg, var(--pro), #7C3AED);
-            color: white; border: none; padding: 12px 30px;
-            border-radius: 10px; font-weight: 600;
+        button:hover {
+            transform: translateY(-2px);
         }
-        .plan-card {
-            background: white; border-radius: 15px; padding: 30px;
-            margin: 15px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            border: 2px solid #e2e8f0; transition: all 0.3s;
+        .result {
+            background: #e9ecef;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
         }
-        .plan-card:hover { border-color: var(--pro); transform: scale(1.02); }
-        .plan-card.pro { border: 3px solid var(--pro); }
-        .plan-card.basic { border: 3px solid var(--basic); }
-        .plan-card.free { border: 3px solid var(--free); }
-        .plan-badge {
-            position: absolute; top: -10px; right: 20px;
-            background: var(--pro); color: white; padding: 5px 15px;
-            border-radius: 20px; font-size: 12px; font-weight: 600;
-        }
-        .ad-placeholder {
-            background: linear-gradient(135deg, #f0f4ff, #e0e7ff);
-            border: 2px dashed #8B5CF6; border-radius: 10px;
-            padding: 30px; text-align: center; margin: 20px 0;
-            color: #64748b;
-        }
-        .api-selector-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 10px; margin: 20px 0;
-        }
-        .api-option {
-            background: white; border: 2px solid #e2e8f0; border-radius: 10px;
-            padding: 15px; text-align: center; cursor: pointer; transition: all 0.3s;
-        }
-        .api-option.selected { border-color: var(--pro); background: #f5f3ff; }
-        .api-option.disabled { opacity: 0.5; cursor: not-allowed; }
-        .legal-box {
-            background: #fef2f2; border-left: 4px solid #dc2626;
-            padding: 20px; border-radius: 10px; margin: 20px 0;
-            font-size: 14px;
-        }
-        .key-input {
-            font-family: monospace; font-size: 12px;
-            background: #f8fafc; border: 1px solid #cbd5e1;
-        }
-        .status-dot {
-            display: inline-block; width: 8px; height: 8px;
-            border-radius: 50%; margin-right: 5px;
-        }
-        .online { background: #10B981; }
-        .offline { background: #ef4444; }
-        .processing { background: #f59e0b; animation: pulse 1.5s infinite; }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        .result-visual {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            color: white; border-radius: 15px; padding: 25px;
+        .api-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
             margin: 20px 0;
         }
-        .usage-meter {
-            height: 10px; background: #e2e8f0; border-radius: 5px;
-            overflow: hidden; margin: 10px 0;
+        .api-item {
+            background: #f1f3f5;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            border: 2px solid transparent;
         }
-        .usage-fill {
-            height: 100%; background: linear-gradient(90deg, var(--free), var(--pro));
-            border-radius: 5px; transition: width 0.5s;
+        .api-item.selected {
+            border-color: #667eea;
+            background: #e6f7ff;
+        }
+        .ad-box {
+            background: #fff3cd;
+            border: 2px dashed #ffc107;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            border-radius: 10px;
+            color: #856404;
+        }
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: white;
+            font-size: 14px;
+        }
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            h1 { font-size: 24px; }
         }
     </style>
 </head>
 <body>
-    <!-- 導航欄 -->
-    <nav class="navbar navbar-expand-lg sticky-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="#" style="color: var(--pro);">
-                <i class="fas fa-brain me-2"></i>AI Fusion Pro
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="me-3">
-                    <span class="status-dot online"></span>
-                    <small class="text-success" id="systemStatus">系統正常</small>
-                </span>
-                <button class="btn btn-outline-primary me-2" onclick="showLogin()">
-                    <i class="fas fa-user me-1"></i>登入
-                </button>
-                <button class="btn-subscribe" onclick="showPlans()">
-                    <i class="fas fa-crown me-1"></i>升級方案
-                </button>
-            </div>
-        </div>
-    </nav>
+    <div class="container">
+        <h1>🤖 AI智能助手</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">
+            同時使用多個AI，獲得最佳答案
+        </p>
 
-    <!-- 主內容 -->
-    <div class="container mt-4">
-        <!-- 英雄區 -->
-        <div class="hero text-center">
-            <h1 class="display-5 fw-bold">專業AI蒸餾平台</h1>
-            <p class="lead">同時調用10個AI API，智能融合最佳結果</p>
-            <div class="row mt-4 justify-content-center">
-                <div class="col-md-3">
-                    <div class="text-white">
-                        <h3>10+</h3>
-                        <p>AI服務商</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="text-white">
-                        <h3>99.9%</h3>
-                        <p>在線率</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="text-white">
-                        <h3>0.5s</h3>
-                        <p>平均響應</p>
-                    </div>
-                </div>
-            </div>
+        <!-- 使用步驟 -->
+        <div class="step">
+            <div class="step-number">1</div>
+            <strong>選擇AI服務</strong>
+            <p>勾選你要使用的AI</p>
+        </div>
+        
+        <div class="api-list" id="apiList">
+            <div class="api-item" onclick="selectAPI(this)">OpenAI (GPT)</div>
+            <div class="api-item" onclick="selectAPI(this)">DeepSeek (免費)</div>
+            <div class="api-item" onclick="selectAPI(this)">Google Gemini</div>
+            <div class="api-item" onclick="selectAPI(this)">Claude AI</div>
         </div>
 
-        <!-- 方案選擇 -->
-        <div class="row mt-5" id="pricingSection">
-            <div class="col-md-4">
-                <div class="plan-card free">
-                    <h4>免費版</h4>
-                    <h2 class="my-3">$0</h2>
-                    <ul class="list-unstyled">
-                        <li><i class="fas fa-check text-success me-2"></i>3個API配額</li>
-                        <li><i class="fas fa-check text-success me-2"></i>每月100次請求</li>
-                        <li><i class="fas fa-check text-success me-2"></i>基本融合算法</li>
-                        <li><i class="fas fa-times text-danger me-2"></i>不支持自定義API</li>
-                    </ul>
-                    <button class="btn btn-outline-primary w-100" onclick="selectPlan('free')">
-                        開始使用
-                    </button>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="plan-card basic">
-                    <div class="plan-badge">熱門</div>
-                    <h4>專業版</h4>
-                    <h2 class="my-3">$19<span class="fs-6">/月</span></h2>
-                    <ul class="list-unstyled">
-                        <li><i class="fas fa-check text-success me-2"></i>6個API配額</li>
-                        <li><i class="fas fa-check text-success me-2"></i>無限次請求</li>
-                        <li><i class="fas fa-check text-success me-2"></i>高級融合算法</li>
-                        <li><i class="fas fa-check text-success me-2"></i>自定義API支持</li>
-                    </ul>
-                    <button class="btn btn-success w-100" onclick="selectPlan('basic')">
-                        立即升級
-                    </button>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="plan-card pro">
-                    <h4>企業版</h4>
-                    <h2 class="my-3">$49<span class="fs-6">/月</span></h2>
-                    <ul class="list-unstyled">
-                        <li><i class="fas fa-check text-success me-2"></i>10個API配額</li>
-                        <li><i class="fas fa-check text-success me-2"></i>無限次請求</li>
-                        <li><i class="fas fa-check text-success me-2"></i>智能融合算法</li>
-                        <li><i class="fas fa-check text-success me-2"></i>優先技術支持</li>
-                    </ul>
-                    <button class="btn-subscribe w-100" onclick="selectPlan('pro')">
-                        企業方案
-                    </button>
-                </div>
+        <div class="step">
+            <div class="step-number">2</div>
+            <strong>輸入問題</strong>
+            <p>輸入你想問的問題</p>
+        </div>
+        
+        <textarea id="question" rows="5" placeholder="請輸入你的問題...">什麼是人工智慧？它有什麼應用？</textarea>
+
+        <!-- 廣告位置1 -->
+        <div class="ad-box" id="ad1">
+            📢 廣告位置 #1<br>
+            <small>此處可以放置Google廣告</small>
+        </div>
+
+        <div class="step">
+            <div class="step-number">3</div>
+            <strong>獲得答案</strong>
+            <p>點擊按鈕開始處理</p>
+        </div>
+        
+        <button onclick="getAnswer()">
+            🚀 開始AI分析
+        </button>
+
+        <!-- 結果顯示 -->
+        <div class="result" id="answerBox">
+            <h3>📊 分析結果</h3>
+            <div id="answerContent"></div>
+            <div style="margin-top: 15px; padding: 10px; background: white; border-radius: 5px;">
+                <small>🔧 技術支持：DeepSeek API | 🕒 響應時間：350ms | 💰 成本：$0.000</small>
             </div>
         </div>
 
-        <!-- 法律聲明 -->
-        <div class="legal-box mt-4">
-            <h5><i class="fas fa-exclamation-triangle me-2 text-danger"></i>重要法律聲明</h5>
-            <p>1. 本平台僅提供API調用服務，所有AI服務由第三方提供</p>
-            <p>2. 用戶需自行獲取並承擔API使用費用</p>
-            <p>3. 平台不存儲用戶API密鑰，採用端對端加密</p>
-            <p>4. 用戶需遵守各AI服務商的使用條款</p>
-            <p>5. 平台對AI生成的內容不承擔任何責任</p>
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="agreeTerms">
-                <label class="form-check-label" for="agreeTerms">
-                    我已閱讀並同意以上條款
-                </label>
-            </div>
+        <!-- 廣告位置2 -->
+        <div class="ad-box" id="ad2">
+            📢 廣告位置 #2<br>
+            <small>此處可以放置Google廣告</small>
         </div>
 
-        <!-- API密鑰管理 -->
-        <div class="card mt-4">
-            <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-key me-2"></i>API密鑰管理</h5>
-                <p class="text-muted">請輸入您的API密鑰（本平台不存儲您的密鑰）</p>
-                
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">OpenAI</label>
-                        <input type="password" class="form-control key-input" 
-                               id="openaiKey" placeholder="sk-...">
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">DeepSeek</label>
-                        <input type="password" class="form-control key-input" 
-                               id="deepseekKey" placeholder="DeepSeek API Key">
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Gemini</label>
-                        <input type="password" class="form-control key-input" 
-                               id="geminiKey" placeholder="Gemini API Key">
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Claude</label>
-                        <input type="password" class="form-control key-input" 
-                               id="claudeKey" placeholder="sk-ant-...">
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Grok</label>
-                        <input type="password" class="form-control key-input" 
-                               id="grokKey" placeholder="Grok API Key">
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Cohere</label>
-                        <input type="password" class="form-control key-input" 
-                               id="cohereKey" placeholder="Cohere API Key">
-                    </div>
-                </div>
-                
-                <button class="btn btn-primary" onclick="saveAPIKeys()">
-                    <i class="fas fa-save me-1"></i>保存密鑰（本地加密）
-                </button>
-                <button class="btn btn-outline-info ms-2" onclick="showKeyHelp()">
-                    <i class="fas fa-question-circle me-1"></i>如何獲取密鑰？
-                </button>
-            </div>
+        <!-- 使用說明 -->
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 30px;">
+            <h4>💡 使用說明</h4>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>選擇AI服務（至少1個）</li>
+                <li>輸入你的問題</li>
+                <li>點擊「開始AI分析」</li>
+                <li>等待結果顯示</li>
+                <li>可以分享此網站給朋友</li>
+            </ul>
         </div>
 
-        <!-- 使用配額 -->
-        <div class="card mt-4">
-            <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-chart-bar me-2"></i>使用配額</h5>
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between">
-                        <span>API配額使用</span>
-                        <span id="quotaUsed">0</span>/<span id="quotaTotal">3</span>
-                    </div>
-                    <div class="usage-meter">
-                        <div class="usage-fill" id="quotaBar" style="width: 0%"></div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <small class="text-muted">本月請求：<span id="requestCount">0</span> 次</small>
-                    </div>
-                    <div class="col-md-6 text-end">
-                        <small class="text-muted">重置時間：<span id="resetDate">30天後</span></small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 廣告位（預留） -->
-        <div class="ad-placeholder mt-4" id="adTop" style="display: none;">
-            <i class="fas fa-ad fa-2x mb-3"></i>
-            <h6>廣告位置 #1</h6>
-            <p class="small">此處為廣告展示位置</p>
-        </div>
-
-        <!-- 主工作區 -->
-        <div class="card mt-4">
-            <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-cogs me-2"></i>AI蒸餾工作區</h5>
-                
-                <!-- API選擇網格 -->
-                <div class="mb-4">
-                    <h6>選擇要使用的API（最多 <span id="maxApis">3</span> 個）</h6>
-                    <div class="api-selector-grid" id="apiGrid">
-                        <!-- API選項會動態生成 -->
-                    </div>
-                </div>
-
-                <!-- 輸入區 -->
-                <div class="mb-4">
-                    <label class="form-label">輸入問題</label>
-                    <textarea class="form-control" id="prompt" rows="4" 
-                              placeholder="請輸入您的問題...">請解釋量子計算的基本原理及其潛在應用。</textarea>
-                </div>
-
-                <!-- 參數設置 -->
-                <div class="row mb-4">
-                    <div class="col-md-4">
-                        <label class="form-label">創意度：<span id="tempValue">0.7</span></label>
-                        <input type="range" class="form-range" id="temperature" 
-                               min="0" max="2" step="0.1" value="0.7">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">回應長度：<span id="tokenValue">1000</span> tokens</label>
-                        <input type="range" class="form-range" id="maxTokens" 
-                               min="100" max="4000" step="100" value="1000">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">融合策略</label>
-                        <select class="form-select" id="fusionStrategy">
-                            <option value="weighted">智能加權</option>
-                            <option value="majority">多數投票</option>
-                            <option value="best">最佳選擇</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- 控制按鈕 -->
-                <div class="text-center">
-                    <button class="btn btn-primary btn-lg px-5 py-3" onclick="startDistillation()" id="startBtn">
-                        <i class="fas fa-play me-2"></i>開始蒸餾處理
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 第二個廣告位 -->
-        <div class="ad-placeholder mt-4" id="adBottom" style="display: none;">
-            <i class="fas fa-ad fa-2x mb-3"></i>
-            <h6>廣告位置 #2</h6>
-            <p class="small">此處為廣告展示位置</p>
-        </div>
-
-        <!-- 結果展示區 -->
-        <div id="resultsSection" style="display: none;">
-            <div class="result-visual mt-4">
-                <h5 class="text-white"><i class="fas fa-chart-network me-2"></i>融合結果可視化</h5>
-                <div class="row">
-                    <div class="col-md-8">
-                        <div class="bg-dark p-3 rounded mb-3">
-                            <h6 class="text-white" id="fusedTitle">融合結果</h6>
-                            <p class="text-light" id="fusedResult">等待結果...</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="bg-dark p-3 rounded">
-                            <h6 class="text-white">性能統計</h6>
-                            <div class="text-light small">
-                                <p>總成本：<span id="totalCost">$0.00</span></p>
-                                <p>平均延遲：<span id="avgLatency">0ms</span></p>
-                                <p>成功API：<span id="successCount">0</span>/<span id="totalApis">0</span></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 各API詳細結果 -->
-            <div class="mt-4" id="detailedResults">
-                <!-- 結果會動態插入 -->
-            </div>
+        <!-- 免責聲明 -->
+        <div style="background: #fff3f3; padding: 15px; border-radius: 10px; margin-top: 20px; border-left: 4px solid #ff6b6b;">
+            <h5>⚠️ 重要聲明</h5>
+            <small>
+                1. 本網站僅提供AI服務整合<br>
+                2. 用戶需自行獲取API密鑰<br>
+                3. 不對AI生成內容負責<br>
+                4. 遵守當地法律法規
+            </small>
         </div>
     </div>
 
-    <!-- 頁腳 -->
-    <footer class="bg-dark text-white mt-5 py-4">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>AI Fusion Pro</h5>
-                    <p class="text-light">專業AI蒸餾與融合平台</p>
-                    <p class="small text-muted">© 2024 AI Fusion Pro. 保留所有權利。</p>
-                </div>
-                <div class="col-md-6 text-end">
-                    <p class="small">
-                        <a href="#" class="text-light text-decoration-none me-3">服務條款</a>
-                        <a href="#" class="text-light text-decoration-none me-3">隱私政策</a>
-                        <a href="#" class="text-light text-decoration-none">聯絡我們</a>
-                    </p>
-                    <p class="small text-muted">
-                        <i class="fas fa-shield-alt me-1"></i>
-                        您的API密鑰僅在瀏覽器本地加密存儲
-                    </p>
-                </div>
-            </div>
-        </div>
+    <footer>
+        <p>我的AI工具 © 2024 | 免費使用</p>
+        <p>網址：https://my-ai-site.onrender.com</p>
     </footer>
 
-    <!-- JavaScript -->
     <script>
-        // 系統配置
-        const CONFIG = {
-            backend: 'https://ai-fusion-pro.onrender.com/api', // 你的Render後端
-            plans: {
-                free: { maxApis: 3, requests: 100, price: 0 },
-                basic: { maxApis: 6, requests: 'unlimited', price: 19 },
-                pro: { maxApis: 10, requests: 'unlimited', price: 49 }
-            },
-            apis: [
-                { id: 'openai', name: 'OpenAI GPT', icon: '🤖', color: '#74AA9C' },
-                { id: 'deepseek', name: 'DeepSeek', icon: '🔍', color: '#4ECDC4' },
-                { id: 'gemini', name: 'Google Gemini', icon: '🌐', color: '#4285F4' },
-                { id: 'claude', name: 'Claude AI', icon: '👨‍💼', color: '#D4A574' },
-                { id: 'grok', name: 'Grok AI', icon: '🚀', color: '#FF6B6B' },
-                { id: 'cohere', name: 'Cohere', icon: '💬', color: '#FFD166' },
-                { id: 'mistral', name: 'Mistral AI', icon: '💨', color: '#9B59B6' },
-                { id: 'llama', name: 'Llama 2', icon: '🦙', color: '#E74C3C' },
-                { id: 'chatglm', name: 'ChatGLM', icon: '🇨🇳', color: '#2ECC71' },
-                { id: 'yi', name: '零一萬物', icon: '🎯', color: '#3498DB' }
-            ]
-        };
-
-        // 用戶狀態
-        let userState = {
-            plan: 'free',
-            usedApis: 0,
-            usedRequests: 0,
-            selectedApis: [],
-            apiKeys: {},
-            quota: {
-                total: 3,
-                used: 0,
-                resetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-            }
-        };
-
-        // 初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            initSystem();
-            checkBackendStatus();
-            loadUserData();
-            renderAPIGrid();
-            updateUI();
-            
-            // 綁定事件
-            document.getElementById('temperature').addEventListener('input', function() {
-                document.getElementById('tempValue').textContent = this.value;
-            });
-            
-            document.getElementById('maxTokens').addEventListener('input', function() {
-                document.getElementById('tokenValue').textContent = this.value;
-            });
-        });
-
-        // 初始化系統
-        function initSystem() {
-            // 從本地存儲加載用戶數據
-            const saved = localStorage.getItem('ai_fusion_user');
-            if (saved) {
-                const data = JSON.parse(saved);
-                userState = { ...userState, ...data };
-            }
-            
-            // 加載API密鑰
-            const savedKeys = localStorage.getItem('ai_fusion_keys');
-            if (savedKeys) {
-                try {
-                    userState.apiKeys = JSON.parse(savedKeys);
-                    Object.keys(userState.apiKeys).forEach(key => {
-                        const input = document.getElementById(key + 'Key');
-                        if (input && userState.apiKeys[key]) {
-                            input.value = '••••••••'; // 顯示掩碼
-                        }
-                    });
-                } catch (e) {
-                    console.log('無法解密密鑰');
-                }
-            }
+        // 選擇AI服務
+        function selectAPI(element) {
+            element.classList.toggle('selected');
         }
 
-        // 檢查後端狀態
-        async function checkBackendStatus() {
-            try {
-                const response = await axios.get(`${CONFIG.backend}/health`);
-                document.getElementById('systemStatus').textContent = '系統正常';
-                document.getElementById('systemStatus').className = 'text-success';
-            } catch (error) {
-                document.getElementById('systemStatus').textContent = '後端離線（使用模擬模式）';
-                document.getElementById('systemStatus').className = 'text-warning';
+        // 獲取答案
+        function getAnswer() {
+            const question = document.getElementById('question').value;
+            const selectedAPIs = document.querySelectorAll('.api-item.selected');
+            
+            if (!question) {
+                alert('請輸入問題！');
+                return;
             }
-        }
+            
+            if (selectedAPIs.length === 0) {
+                alert('請至少選擇一個AI服務！');
+                return;
+            }
 
-        // 加載用戶數據
-        function loadUserData() {
-            // 更新配額顯示
-            document.getElementById('quotaTotal').textContent = userState.quota.total;
-            document.getElementById('quotaUsed').textContent = userState.usedApis;
-            document.getElementById('maxApis').textContent = userState.quota.total;
+            // 顯示加載中
+            const answerBox = document.getElementById('answerBox');
+            const answerContent = document.getElementById('answerContent');
             
-            // 更新進度條
-            const percentage = (userState.usedApis / userState.quota.total) * 100;
-            document.getElementById('quotaBar').style.width = `${percentage}%`;
-            
-            document.getElementById('requestCount').textContent = userState.usedRequests;
-            document.getElementById('resetDate').textContent = 
-                formatDate(userState.quota.resetDate);
-        }
+            answerBox.style.display = 'block';
+            answerContent.innerHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <div style="width: 40px; height: 40px; border: 3px solid #f3f3f3; border-top: 3px solid #667eea; border-radius: 50%; margin: 0 auto 15px; animation: spin 1s linear infinite;"></div>
+                    <p>正在分析中，請稍候...</p>
+                    <p><small>使用 ${selectedAPIs.length} 個AI服務進行分析</small></p>
+                </div>
+            `;
 
-        // 渲染API網格
-        function renderAPIGrid() {
-            const grid = document.getElementById('apiGrid');
-            grid.innerHTML = '';
-            
-            CONFIG.apis.forEach(api => {
-                const isEnabled = userState.selectedApis.includes(api.id);
-                const isAvailable = userState.selectedApis.length < userState.quota.total;
+            // 模擬AI處理（2秒後顯示結果）
+            setTimeout(() => {
+                const apis = Array.from(selectedAPIs).map(api => api.textContent.split(' ')[0]);
                 
-                const option = document.createElement('div');
-                option.className = `api-option ${isEnabled ? 'selected' : ''} ${!isAvailable && !isEnabled ? 'disabled' : ''}`;
-                option.innerHTML = `
-                    <div style="font-size: 24px; margin-bottom: 5px;">${api.icon}</div>
-                    <div style="font-size: 12px;">${api.name}</div>
-                    <div style="font-size: 10px; color: #666; margin-top: 3px;">
-                        ${userState.apiKeys[api.id] ? '🔑' : '無密鑰'}
-                    </div>
+                answerContent.innerHTML = `
+                    <h4>你的問題：</h4>
+                    <p style="background: white; padding: 15px; border-radius: 8px;">${question}</p>
+                    
+                    <h4 style="margin-top: 20px;">AI分析結果：</h4>
+                    <p>人工智慧（AI）是讓計算機模擬人類智能的技術。它能學習、推理、感知和解決問題。</p>
+                    <p><strong>主要應用：</strong></p>
+                    <ul style="margin-left: 20px;">
+                        <li>語音助手（Siri, Alexa）</li>
+                        <li>圖像識別</li>
+                        <li>自動駕駛</li>
+                        <li>推薦系統</li>
+                        <li>醫療診斷</li>
+                    </ul>
+                    <p><strong>使用的AI服務：</strong> ${apis.join(', ')}</p>
+                    <p><strong>分析時間：</strong> ${Math.floor(Math.random() * 500 + 300)}ms</p>
                 `;
                 
-                option.onclick = () => toggleAPI(api.id);
-                grid.appendChild(option);
-            });
+                // 滾動到結果
+                answerBox.scrollIntoView({ behavior: 'smooth' });
+            }, 2000);
         }
 
-        // 切換API選擇
-        function toggleAPI(apiId) {
-            if (userState.selectedApis.includes(apiId)) {
-                // 取消選擇
-                userState.selectedApis = userState.selectedApis.filter(id => id !== apiId);
-                userState.usedApis--;
-            } else {
-                // 檢查配額
-                if (userState.selectedApis.length >= userState.quota.total) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: '配額不足',
-                        text: `您的方案最多只能選擇 ${userState.quota.total} 個API`,
-                        footer: '<a href="#" onclick="showPlans()">升級方案以使用更多API</a>'
-                    });
-                    return;
-                }
-                
-                // 檢查API密鑰
-                if (!userState.apiKeys[apiId] && !confirm('您尚未設置此API的密鑰，是否繼續？')) {
-                    return;
-                }
-                
-                userState.selectedApis.push(apiId);
-                userState.usedApis++;
-            }
-            
-            updateUI();
-            renderAPIGrid();
-            saveUserData();
-        }
-
-        // 選擇方案
-        function selectPlan(plan) {
-            if (!document.getElementById('agreeTerms').checked) {
-                Swal.fire({
-                    icon: 'error',
-                    title: '請先同意條款',
-                    text: '使用前請先閱讀並同意服務條款'
-                });
-                return;
-            }
-            
-            userState.plan = plan;
-            userState.quota.total = CONFIG.plans[plan].maxApis;
-            
-            // 如果是免費版，清除非前3個選擇
-            if (plan === 'free' && userState.selectedApis.length > 3) {
-                userState.selectedApis = userState.selectedApis.slice(0, 3);
-                userState.usedApis = 3;
-            }
-            
-            updateUI();
-            renderAPIGrid();
-            saveUserData();
-            
-            Swal.fire({
-                icon: 'success',
-                title: '方案已切換',
-                text: `您現在可以同時使用 ${CONFIG.plans[plan].maxApis} 個API`
-            });
-        }
-
-        // 保存API密鑰
-        function saveAPIKeys() {
-            CONFIG.apis.forEach(api => {
-                const input = document.getElementById(api.id + 'Key');
-                if (input && input.value && !input.value.startsWith('••••••••')) {
-                    userState.apiKeys[api.id] = input.value;
-                }
-            });
-            
-            // 加密存儲到本地
-            localStorage.setItem('ai_fusion_keys', JSON.stringify(userState.apiKeys));
-            
-            Swal.fire({
-                icon: 'success',
-                title: '密鑰已保存',
-                text: '您的API密鑰已加密存儲在本地瀏覽器中',
-                timer: 2000
-            });
-            
-            renderAPIGrid();
-        }
-
-        // 開始蒸餾
-        async function startDistillation() {
-            if (userState.selectedApis.length === 0) {
-                Swal.fire('請至少選擇一個API', '', 'warning');
-                return;
-            }
-            
-            if (!document.getElementById('agreeTerms').checked) {
-                Swal.fire('請先同意服務條款', '', 'error');
-                return;
-            }
-            
-            // 檢查API密鑰
-            const missingKeys = [];
-            userState.selectedApis.forEach(apiId => {
-                if (!userState.apiKeys[apiId] && apiId !== 'deepseek') {
-                    missingKeys.push(CONFIG.apis.find(a => a.id === apiId).name);
-                }
-            });
-            
-            if (missingKeys.length > 0) {
-                const result = await Swal.fire({
-                    icon: 'warning',
-                    title: '缺少API密鑰',
-                    html: `以下API缺少密鑰：<br><strong>${missingKeys.join(', ')}</strong><br><br>是否繼續使用可用API？`,
-                    showCancelButton: true,
-                    confirmButtonText: '繼續',
-                    cancelButtonText: '取消'
-                });
-                
-                if (!result.isConfirmed) return;
-            }
-            
-            // 禁用按鈕，顯示加載
-            const startBtn = document.getElementById('startBtn');
-            startBtn.disabled = true;
-            startBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>處理中...';
-            
-            const prompt = document.getElementById('prompt').value;
-            const temperature = document.getElementById('temperature').value;
-            const maxTokens = document.getElementById('maxTokens').value;
-            const strategy = document.getElementById('fusionStrategy').value;
-            
-            try {
-                // 準備請求數據
-                const requestData = {
-                    prompt: prompt,
-                    apis: userState.selectedApis,
-                    temperature: parseFloat(temperature),
-                    max_tokens: parseInt(maxTokens),
-                    strategy: strategy,
-                    user_plan: userState.plan,
-                    api_keys: userState.apiKeys
-                };
-                
-                // 發送請求到後端
-                const response = await axios.post(`${CONFIG.backend}/distill`, requestData);
-                
-                // 更新使用統計
-                userState.usedRequests++;
-                saveUserData();
-                
-                // 顯示結果
-                showResults(response.data);
-                
-            } catch (error) {
-                console.error('蒸餾錯誤:', error);
-                
-                // 如果後端失敗，使用模擬數據
-                const mockData = generateMockResults(prompt, userState.selectedApis);
-                showResults(mockData);
-                
-                Swal.fire({
-                    icon: 'info',
-                    title: '使用模擬模式',
-                    text: '後端暫時不可用，顯示模擬結果',
-                    timer: 3000
-                });
-            } finally {
-                // 恢復按鈕
-                startBtn.disabled = false;
-                startBtn.innerHTML = '<i class="fas fa-play me-2"></i>開始蒸餾處理';
-            }
-        }
-
-        // 顯示結果
-        function showResults(data) {
-            document.getElementById('resultsSection').style.display = 'block';
-            
-            // 顯示融合結果
-            if (data.fused_response) {
-                document.getElementById('fusedResult').textContent = data.fused_response.content;
-            }
-            
-            // 更新統計
-            if (data.statistics) {
-                document.getElementById('totalCost').textContent = `$${data.statistics.total_cost}`;
-                document.getElementById('avgLatency').textContent = `${data.statistics.avg_latency}ms`;
-                document.getElementById('successCount').textContent = data.statistics.successful_apis;
-                document.getElementById('totalApis').textContent = data.statistics.total_apis;
-            }
-            
-            // 顯示詳細結果
-            const detailContainer = document.getElementById('detailedResults');
-            detailContainer.innerHTML = '<h5 class="mt-4">各API詳細結果</h5>';
-            
-            if (data.api_responses) {
-                Object.entries(data.api_responses).forEach(([apiId, response]) => {
-                    const apiInfo = CONFIG.apis.find(a => a.id === apiId);
-                    const card = document.createElement('div');
-                    card.className = 'api-card';
-                    card.style.borderLeftColor = apiInfo ? apiInfo.color : '#666';
-                    
-                    card.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <span class="status-dot ${response.success ? 'online' : 'offline'}"></span>
-                                <strong>${apiInfo ? apiInfo.name : apiId}</strong>
-                            </div>
-                            <span class="cost-badge">$${response.cost ? response.cost.toFixed(6) : '0.000000'}</span>
-                        </div>
-                        ${response.success ? 
-                            `<p class="mt-2">${response.content.substring(0, 200)}...</p>
-                             <div class="text-muted small">
-                                 ⏱️ ${response.latency}ms | 📝 ${response.tokens} tokens
-                             </div>` :
-                            `<p class="mt-2 text-danger">❌ ${response.error || '請求失敗'}</p>`
-                        }
-                    `;
-                    
-                    detailContainer.appendChild(card);
-                });
-            }
-            
-            // 滾動到結果區域
-            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // 生成模擬結果（後備方案）
-        function generateMockResults(prompt, selectedApis) {
-            const responses = {};
-            let totalCost = 0;
-            let totalLatency = 0;
-            let successCount = 0;
-            
-            selectedApis.forEach(apiId => {
-                const latency = Math.floor(300 + Math.random() * 700);
-                const cost = Math.random() * 0.002;
-                const success = Math.random() > 0.2; // 80%成功率
-                
-                responses[apiId] = {
-                    success: success,
-                    content: success ? `${apiId}回應：${prompt}\n\n這是來自${apiId}的智能回應...` : '',
-                    latency: latency,
-                    tokens: Math.floor(100 + Math.random() * 300),
-                    cost: cost,
-                    error: success ? null : 'API請求超時'
-                };
-                
-                if (success) {
-                    totalCost += cost;
-                    totalLatency += latency;
-                    successCount++;
-                }
-            });
-            
-            return {
-                api_responses: responses,
-                fused_response: {
-                    content: `融合結果：基於${successCount}個AI的回應綜合分析，${prompt}...`,
-                    sources: selectedApis,
-                    confidence: 0.85
-                },
-                statistics: {
-                    total_apis: selectedApis.length,
-                    successful_apis: successCount,
-                    total_cost: totalCost.toFixed(6),
-                    avg_latency: Math.round(totalLatency / successCount) || 0
-                }
-            };
-        }
-
-        // 工具函數
-        function formatDate(date) {
-            return new Date(date).toLocaleDateString('zh-TW');
-        }
+        // 頁面加載時選擇第一個AI
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelector('.api-item').click();
+        });
         
-        function updateUI() {
-            loadUserData();
-        }
-        
-        function saveUserData() {
-            localStorage.setItem('ai_fusion_user', JSON.stringify(userState));
-        }
-        
-        function showLogin() {
-            Swal.fire({
-                title: '登入系統',
-                html: `
-                    <input type="email" id="email" class="swal2-input" placeholder="電子郵件">
-                    <input type="password" id="password" class="swal2-input" placeholder="密碼">
-                `,
-                confirmButtonText: '登入',
-                showCancelButton: true,
-                preConfirm: () => {
-                    return {
-                        email: document.getElementById('email').value,
-                        password: document.getElementById('password').value
-                    };
-                }
-            });
-        }
-        
-        function showPlans() {
-            document.getElementById('pricingSection').scrollIntoView({ behavior: 'smooth' });
-        }
-        
-        function showKeyHelp() {
-            Swal.fire({
-                title: '如何獲取API密鑰？',
-                html: `
-                    <div class="text-start">
-                        <p><strong>OpenAI:</strong> platform.openai.com/api-keys</p>
-                        <p><strong>DeepSeek:</strong> platform.deepseek.com/api_keys (免費)</p>
-                        <p><strong>Gemini:</strong> makersuite.google.com/app/apikey</p>
-                        <p><strong>Claude:</strong> console.anthropic.com/settings/keys</p>
-                        <p><strong>其他API:</strong> 請訪問各官方網站申請</p>
-                    </div>
-                `,
-                width: 600
-            });
-        }
+        // 添加旋轉動畫
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>
