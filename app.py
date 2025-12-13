@@ -7,6 +7,7 @@ try:
     from imars_core import start_imars_refinement
 except ImportError:
     start_imars_refinement = None
+    # 這行日誌將在 Render log 中明確指出檔案載入失敗
     print("FATAL ERROR: Could not import start_imars_refinement from imars_core. Is imars_core.py present?")
 
 app = Flask(__name__)
@@ -41,6 +42,7 @@ def handle_distillation():
         final_answer, process_history = start_imars_refinement(user_prompt, api_keys_pool)
         
         if final_answer is None:
+             # 如果 final_answer 是 None，將流程日誌返回
              return jsonify({
                 "success": False,
                 "error": "AI 服務啟動或精煉失敗。請檢查 API Keys 或供應商名稱是否正確。",
@@ -54,6 +56,7 @@ def handle_distillation():
         })
     
     except Exception as e:
+        # 打印未捕獲的錯誤到 Render log
         print(f"Unhandled Error during distillation: {e}")
         return jsonify({"error": f"Internal distillation error: {str(e)}"}), 500
 
