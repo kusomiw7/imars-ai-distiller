@@ -1,278 +1,367 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
-    <title>我的AI工具 | 免費使用</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: Arial; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .container {
-            max-width: 800px;
-            margin: 50px auto;
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        h1 {
-            color: #667eea;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .step {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-            border-left: 4px solid #667eea;
-        }
-        .step-number {
-            background: #667eea;
-            color: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 10px;
-        }
-        textarea {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 16px;
-            margin: 20px 0;
-            resize: vertical;
-        }
-        button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 10px;
-            font-size: 18px;
-            cursor: pointer;
-            width: 100%;
-            transition: transform 0.3s;
-        }
-        button:hover {
-            transform: translateY(-2px);
-        }
-        .result {
-            background: #e9ecef;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            display: none;
-        }
-        .api-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin: 20px 0;
-        }
-        .api-item {
-            background: #f1f3f5;
-            padding: 10px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            border: 2px solid transparent;
-        }
-        .api-item.selected {
-            border-color: #667eea;
-            background: #e6f7ff;
-        }
-        .ad-box {
-            background: #fff3cd;
-            border: 2px dashed #ffc107;
-            padding: 20px;
-            text-align: center;
-            margin: 20px 0;
-            border-radius: 10px;
-            color: #856404;
-        }
-        footer {
-            text-align: center;
-            margin-top: 30px;
-            color: white;
-            font-size: 14px;
-        }
-        @media (max-width: 600px) {
-            .container { padding: 20px; }
-            h1 { font-size: 24px; }
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Fusion Pro - 專業AI蒸餾平台</title>
+    <meta name="description" content="同時調用10個AI API，智能融合最佳結果。免費使用3個API，付費升級最多10個API。">
+    <meta name="keywords" content="AI,人工智能,OpenAI,DeepSeek,Gemini,Claude,API整合">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <!-- Google AdSense (審核通過後取消註釋) -->
+    <!--
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_ID" crossorigin="anonymous"></script>
+    -->
 </head>
 <body>
-    <div class="container">
-        <h1>🤖 AI智能助手</h1>
-        <p style="text-align: center; color: #666; margin-bottom: 30px;">
-            同時使用多個AI，獲得最佳答案
-        </p>
-
-        <!-- 使用步驟 -->
-        <div class="step">
-            <div class="step-number">1</div>
-            <strong>選擇AI服務</strong>
-            <p>勾選你要使用的AI</p>
-        </div>
-        
-        <div class="api-list" id="apiList">
-            <div class="api-item" onclick="selectAPI(this)">OpenAI (GPT)</div>
-            <div class="api-item" onclick="selectAPI(this)">DeepSeek (免費)</div>
-            <div class="api-item" onclick="selectAPI(this)">Google Gemini</div>
-            <div class="api-item" onclick="selectAPI(this)">Claude AI</div>
-        </div>
-
-        <div class="step">
-            <div class="step-number">2</div>
-            <strong>輸入問題</strong>
-            <p>輸入你想問的問題</p>
-        </div>
-        
-        <textarea id="question" rows="5" placeholder="請輸入你的問題...">什麼是人工智慧？它有什麼應用？</textarea>
-
-        <!-- 廣告位置1 -->
-        <div class="ad-box" id="ad1">
-            📢 廣告位置 #1<br>
-            <small>此處可以放置Google廣告</small>
-        </div>
-
-        <div class="step">
-            <div class="step-number">3</div>
-            <strong>獲得答案</strong>
-            <p>點擊按鈕開始處理</p>
-        </div>
-        
-        <button onclick="getAnswer()">
-            🚀 開始AI分析
-        </button>
-
-        <!-- 結果顯示 -->
-        <div class="result" id="answerBox">
-            <h3>📊 分析結果</h3>
-            <div id="answerContent"></div>
-            <div style="margin-top: 15px; padding: 10px; background: white; border-radius: 5px;">
-                <small>🔧 技術支持：DeepSeek API | 🕒 響應時間：350ms | 💰 成本：$0.000</small>
+    <!-- 導航欄 -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <span class="logo-icon">🤖</span>
+                <span class="logo-text">AI Fusion Pro</span>
+            </div>
+            <div class="nav-links">
+                <a href="#home">首頁</a>
+                <a href="#features">功能</a>
+                <a href="#pricing">方案</a>
+                <a href="#demo">試用</a>
+                <a href="#contact">聯絡</a>
+                <button class="btn-login" onclick="showLogin()">登入/註冊</button>
             </div>
         </div>
+    </nav>
 
-        <!-- 廣告位置2 -->
-        <div class="ad-box" id="ad2">
-            📢 廣告位置 #2<br>
-            <small>此處可以放置Google廣告</small>
-        </div>
-
-        <!-- 使用說明 -->
-        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 30px;">
-            <h4>💡 使用說明</h4>
-            <ul style="margin-left: 20px; margin-top: 10px;">
-                <li>選擇AI服務（至少1個）</li>
-                <li>輸入你的問題</li>
-                <li>點擊「開始AI分析」</li>
-                <li>等待結果顯示</li>
-                <li>可以分享此網站給朋友</li>
-            </ul>
-        </div>
-
-        <!-- 免責聲明 -->
-        <div style="background: #fff3f3; padding: 15px; border-radius: 10px; margin-top: 20px; border-left: 4px solid #ff6b6b;">
-            <h5>⚠️ 重要聲明</h5>
-            <small>
-                1. 本網站僅提供AI服務整合<br>
-                2. 用戶需自行獲取API密鑰<br>
-                3. 不對AI生成內容負責<br>
-                4. 遵守當地法律法規
-            </small>
+    <!-- 廣告位置 1 -->
+    <div class="ad-container ad-top">
+        <div class="ad-placeholder">
+            <div class="ad-label">廣告位置 #1</div>
+            <p class="ad-text">此處顯示Google AdSense廣告</p>
+            <small>網站流量達標後可申請廣告</small>
         </div>
     </div>
 
-    <footer>
-        <p>我的AI工具 © 2024 | 免費使用</p>
-        <p>網址：https://my-ai-site.onrender.com</p>
+    <!-- 首頁區 -->
+    <section id="home" class="hero">
+        <div class="container">
+            <h1 class="hero-title">同時使用<span class="highlight">10個AI</span>，獲得最佳答案</h1>
+            <p class="hero-subtitle">整合OpenAI GPT-4、DeepSeek、Google Gemini、Claude等主流AI服務</p>
+            
+            <div class="hero-stats">
+                <div class="stat">
+                    <div class="stat-number">10+</div>
+                    <div class="stat-label">AI服務</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">0.5s</div>
+                    <div class="stat-label">平均響應</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">85%</div>
+                    <div class="stat-label">準確率</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">90%</div>
+                    <div class="stat-label">成本節省</div>
+                </div>
+            </div>
+
+            <div class="hero-cta">
+                <button class="btn-primary btn-large" onclick="startFreeTrial()">
+                    <span class="btn-icon">🚀</span>
+                    免費試用（3個API）
+                </button>
+                <button class="btn-secondary" onclick="scrollToDemo()">
+                    <span class="btn-icon">🎮</span>
+                    立即演示
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 功能介紹 -->
+    <section id="features" class="section features">
+        <div class="container">
+            <h2 class="section-title">核心功能</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔌</div>
+                    <h3>多API整合</h3>
+                    <p>支持10+主流AI API，包括免費和付費選項</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3>智能融合</h3>
+                    <p>先進算法融合多個AI回應，獲得最優結果</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💰</div>
+                    <h3>成本優化</h3>
+                    <p>智能選擇最佳API組合，節省90%成本</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>高速響應</h3>
+                    <p>並行調用API，平均響應時間0.5秒</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 定價方案 -->
+    <section id="pricing" class="section pricing">
+        <div class="container">
+            <h2 class="section-title">選擇適合的方案</h2>
+            <div class="pricing-grid">
+                <!-- 免費方案 -->
+                <div class="plan-card">
+                    <div class="plan-header">
+                        <h3>免費版</h3>
+                        <div class="plan-price">
+                            <span class="price">$0</span>
+                            <span class="period">/月</span>
+                        </div>
+                        <div class="plan-badge">永久免費</div>
+                    </div>
+                    <ul class="plan-features">
+                        <li><span class="check">✓</span> 3個API配額</li>
+                        <li><span class="check">✓</span> 每月100次請求</li>
+                        <li><span class="check">✓</span> 基本融合算法</li>
+                        <li><span class="cross">✗</span> 自定義API</li>
+                        <li><span class="cross">✗</span> 優先支持</li>
+                    </ul>
+                    <button class="btn-plan" onclick="selectPlan('free')">開始使用</button>
+                </div>
+
+                <!-- 專業方案 -->
+                <div class="plan-card popular">
+                    <div class="plan-badge-popular">最受歡迎</div>
+                    <div class="plan-header">
+                        <h3>專業版</h3>
+                        <div class="plan-price">
+                            <span class="price">$19</span>
+                            <span class="period">/月</span>
+                        </div>
+                    </div>
+                    <ul class="plan-features">
+                        <li><span class="check">✓</span> 6個API配額</li>
+                        <li><span class="check">✓</span> 無限次請求</li>
+                        <li><span class="check">✓</span> 高級融合算法</li>
+                        <li><span class="check">✓</span> 自定義API</li>
+                        <li><span class="cross">✗</span> 優先支持</li>
+                    </ul>
+                    <button class="btn-plan btn-popular" onclick="selectPlan('pro')">立即升級</button>
+                </div>
+
+                <!-- 企業方案 -->
+                <div class="plan-card">
+                    <div class="plan-header">
+                        <h3>企業版</h3>
+                        <div class="plan-price">
+                            <span class="price">$49</span>
+                            <span class="period">/月</span>
+                        </div>
+                    </div>
+                    <ul class="plan-features">
+                        <li><span class="check">✓</span> 10個API配額</li>
+                        <li><span class="check">✓</span> 無限次請求</li>
+                        <li><span class="check">✓</span> 智能融合算法</li>
+                        <li><span class="check">✓</span> 自定義API</li>
+                        <li><span class="check">✓</span> 優先支持</li>
+                    </ul>
+                    <button class="btn-plan" onclick="selectPlan('enterprise')">企業方案</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 免責聲明 -->
+    <div class="disclaimer">
+        <div class="container">
+            <h4><span class="warning-icon">⚠️</span> 重要法律聲明</h4>
+            <p>1. 本平台僅提供技術整合服務，用戶需自行獲取並承擔各API服務費用</p>
+            <p>2. API密鑰僅在用戶本地瀏覽器加密存儲，平台不存儲任何用戶密鑰</p>
+            <p>3. 用戶需遵守各AI服務商（OpenAI、Google、Anthropic等）的使用條款</p>
+            <p>4. 平台對AI生成的內容不承擔任何法律責任</p>
+            <div class="agree-terms">
+                <input type="checkbox" id="agreeCheckbox">
+                <label for="agreeCheckbox">我已閱讀並同意以上條款及<a href="terms.html">服務條款</a></label>
+            </div>
+        </div>
+    </div>
+
+    <!-- 演示區 -->
+    <section id="demo" class="section demo">
+        <div class="container">
+            <h2 class="section-title">立即試用</h2>
+            
+            <!-- API密鑰管理 -->
+            <div class="api-keys">
+                <h3><span class="icon">🔑</span> API密鑰設置（本地加密存儲）</h3>
+                <div class="keys-grid">
+                    <div class="key-input-group">
+                        <label>OpenAI API Key</label>
+                        <input type="password" id="openaiKey" placeholder="sk-..." class="key-input">
+                    </div>
+                    <div class="key-input-group">
+                        <label>DeepSeek API Key</label>
+                        <input type="password" id="deepseekKey" placeholder="免費申請" class="key-input">
+                    </div>
+                    <div class="key-input-group">
+                        <label>Google Gemini Key</label>
+                        <input type="password" id="geminiKey" placeholder="AIza..." class="key-input">
+                    </div>
+                    <div class="key-input-group">
+                        <label>Claude API Key</label>
+                        <input type="password" id="claudeKey" placeholder="sk-ant-..." class="key-input">
+                    </div>
+                </div>
+                <button class="btn-save-keys" onclick="saveAPIKeys()">
+                    <span class="icon">💾</span> 保存密鑰到本地
+                </button>
+                <button class="btn-help" onclick="showKeyHelp()">
+                    <span class="icon">❓</span> 如何獲取密鑰？
+                </button>
+            </div>
+
+            <!-- API選擇 -->
+            <div class="api-selection">
+                <h3><span class="icon">🔌</span> 選擇AI服務（最多 <span id="maxApis">3</span> 個）</h3>
+                <div class="api-grid" id="apiGrid">
+                    <!-- API選項會由JavaScript生成 -->
+                </div>
+            </div>
+
+            <!-- 輸入區 -->
+            <div class="input-area">
+                <h3><span class="icon">💬</span> 輸入你的問題</h3>
+                <textarea id="prompt" class="prompt-input" placeholder="請輸入你的問題...">請詳細解釋什麼是機器學習，並舉例說明它在日常生活中的應用。</textarea>
+                
+                <div class="settings">
+                    <div class="setting">
+                        <label>創意度：<span id="tempValue">0.7</span></label>
+                        <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7">
+                    </div>
+                    <div class="setting">
+                        <label>回應長度：<span id="tokenValue">1000</span> tokens</label>
+                        <input type="range" id="maxTokens" min="100" max="4000" step="100" value="1000">
+                    </div>
+                    <div class="setting">
+                        <label>融合策略</label>
+                        <select id="fusionStrategy">
+                            <option value="weighted">智能加權</option>
+                            <option value="majority">多數投票</option>
+                            <option value="best">最佳選擇</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn-process" id="processBtn" onclick="startProcessing()">
+                    <span class="btn-icon">🚀</span>
+                    <span class="btn-text">開始AI蒸餾處理</span>
+                </button>
+            </div>
+
+            <!-- 結果顯示 -->
+            <div id="results" class="results" style="display: none;">
+                <div class="results-header">
+                    <h3><span class="icon">📊</span> 處理結果</h3>
+                    <div class="results-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">總成本</span>
+                            <span class="stat-value" id="totalCost">$0.00</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">平均延遲</span>
+                            <span class="stat-value" id="avgLatency">0ms</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">成功API</span>
+                            <span class="stat-value" id="successCount">0/0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 融合結果 -->
+                <div class="fused-result">
+                    <h4><span class="icon">🎯</span> 融合結果</h4>
+                    <div class="fused-content" id="fusedContent">
+                        等待處理結果...
+                    </div>
+                </div>
+
+                <!-- 各API結果 -->
+                <div class="api-results">
+                    <h4><span class="icon">🔍</span> 各API詳細結果</h4>
+                    <div class="results-grid" id="resultsGrid">
+                        <!-- 結果會動態插入 -->
+                    </div>
+                </div>
+
+                <!-- 操作按鈕 -->
+                <div class="action-buttons">
+                    <button class="btn-download" onclick="downloadResults()">
+                        <span class="icon">💾</span> 下載結果
+                    </button>
+                    <button class="btn-share" onclick="shareResults()">
+                        <span class="icon">📤</span> 分享結果
+                    </button>
+                    <button class="btn-clear" onclick="clearResults()">
+                        <span class="icon">🗑️</span> 清除結果
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 廣告位置 2 -->
+    <div class="ad-container ad-bottom">
+        <div class="ad-placeholder">
+            <div class="ad-label">廣告位置 #2</div>
+            <p class="ad-text">此處顯示Google AdSense廣告</p>
+            <small>每月預計收入：$50-200</small>
+        </div>
+    </div>
+
+    <!-- 頁腳 -->
+    <footer id="contact" class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>AI Fusion Pro</h4>
+                    <p>專業AI蒸餾與整合平台</p>
+                    <p class="footer-contact">聯絡我們：contact@aifusionpro.com</p>
+                </div>
+                <div class="footer-section">
+                    <h4>快速連結</h4>
+                    <a href="#home">首頁</a>
+                    <a href="#features">功能</a>
+                    <a href="#pricing">方案</a>
+                    <a href="#demo">試用</a>
+                </div>
+                <div class="footer-section">
+                    <h4>法律條款</h4>
+                    <a href="privacy.html">隱私政策</a>
+                    <a href="terms.html">服務條款</a>
+                    <a href="disclaimer.html">免責聲明</a>
+                </div>
+                <div class="footer-section">
+                    <h4>API支持</h4>
+                    <a href="https://openai.com" target="_blank">OpenAI</a>
+                    <a href="https://deepseek.com" target="_blank">DeepSeek</a>
+                    <a href="https://gemini.google.com" target="_blank">Google Gemini</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2024 AI Fusion Pro. 保留所有權利。</p>
+                <p class="security-note">
+                    <span class="icon">🔒</span> 您的API密鑰僅在本地瀏覽器加密存儲
+                </p>
+            </div>
+        </div>
     </footer>
 
-    <script>
-        // 選擇AI服務
-        function selectAPI(element) {
-            element.classList.toggle('selected');
-        }
-
-        // 獲取答案
-        function getAnswer() {
-            const question = document.getElementById('question').value;
-            const selectedAPIs = document.querySelectorAll('.api-item.selected');
-            
-            if (!question) {
-                alert('請輸入問題！');
-                return;
-            }
-            
-            if (selectedAPIs.length === 0) {
-                alert('請至少選擇一個AI服務！');
-                return;
-            }
-
-            // 顯示加載中
-            const answerBox = document.getElementById('answerBox');
-            const answerContent = document.getElementById('answerContent');
-            
-            answerBox.style.display = 'block';
-            answerContent.innerHTML = `
-                <div style="text-align: center; padding: 20px;">
-                    <div style="width: 40px; height: 40px; border: 3px solid #f3f3f3; border-top: 3px solid #667eea; border-radius: 50%; margin: 0 auto 15px; animation: spin 1s linear infinite;"></div>
-                    <p>正在分析中，請稍候...</p>
-                    <p><small>使用 ${selectedAPIs.length} 個AI服務進行分析</small></p>
-                </div>
-            `;
-
-            // 模擬AI處理（2秒後顯示結果）
-            setTimeout(() => {
-                const apis = Array.from(selectedAPIs).map(api => api.textContent.split(' ')[0]);
-                
-                answerContent.innerHTML = `
-                    <h4>你的問題：</h4>
-                    <p style="background: white; padding: 15px; border-radius: 8px;">${question}</p>
-                    
-                    <h4 style="margin-top: 20px;">AI分析結果：</h4>
-                    <p>人工智慧（AI）是讓計算機模擬人類智能的技術。它能學習、推理、感知和解決問題。</p>
-                    <p><strong>主要應用：</strong></p>
-                    <ul style="margin-left: 20px;">
-                        <li>語音助手（Siri, Alexa）</li>
-                        <li>圖像識別</li>
-                        <li>自動駕駛</li>
-                        <li>推薦系統</li>
-                        <li>醫療診斷</li>
-                    </ul>
-                    <p><strong>使用的AI服務：</strong> ${apis.join(', ')}</p>
-                    <p><strong>分析時間：</strong> ${Math.floor(Math.random() * 500 + 300)}ms</p>
-                `;
-                
-                // 滾動到結果
-                answerBox.scrollIntoView({ behavior: 'smooth' });
-            }, 2000);
-        }
-
-        // 頁面加載時選擇第一個AI
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelector('.api-item').click();
-        });
-        
-        // 添加旋轉動畫
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        `;
-        document.head.appendChild(style);
-    </script>
+    <!-- JavaScript -->
+    <script src="script.js"></script>
 </body>
 </html>
